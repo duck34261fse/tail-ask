@@ -23,25 +23,59 @@ Make any AI agent ask at the right moment — and never ask when it shouldn't.
 
 ## 安装
 
-### DSH
-
-先拿到源码，再把本地目录挂进 profile：
+先克隆：
 
 ```sh
-git clone https://github.com/<你的用户名>/tail-ask.git
+git clone https://github.com/duck34261fse/tail-ask.git
+```
+
+下面按平台选一种，装完拿到的是同一套规则。
+
+### DSH
+
+把克隆下来的目录挂进 profile。
+
+**如果你有 `dsh` 命令**（部分发行方式自带）：
+
+```sh
 dsh plugin --profile desktop add link:<克隆下来的绝对路径>
 ```
 
-插件的 `cordis.patch.yml` 会把自己插进 profile，不需要你手工改配置。
+**如果没有 `dsh` 命令**（Electron 安装包常常没有），手工两步：
 
-### Claude Code / Codex / 任何读 AGENTS.md 的 agent
+1. 打开 `%USERPROFILE%\.dsh\profiles\desktop\package.json`，在 `dependencies` 里加一行：
+
+   ```json
+   "tail-ask": "link:<克隆下来的绝对路径，正斜杠>"
+   ```
+
+2. 同一个文件往下找 `bundles` 数组（在 `dsh.bundle` 下面），加一项 `"tail-ask"`。
+
+3. 重启 DSH。
+
+插件的 `cordis.patch.yml` 会把自己插进层栈，不需要另外改 `cordis.patch.yml`。
+
+**两个常见错误**：
+
+- 写 `add tail-ask` 不带 `link:` —— DSH 会当成 npm 包名去 registry 找，本项目没上架 npm，必然失败。
+- 路径用反斜杠 —— 在 JSON 里要转义，直接写成 `D:/xxx/tail-ask` 这种正斜杠最省事。
+
+### Claude Code
 
 ```sh
-git clone https://github.com/<你的用户名>/tail-ask.git
-node tail-ask/bin/cli.js init agents
+node tail-ask/bin/cli.js init claude
 ```
 
-往项目根的 `AGENTS.md` 追加一段带标记的规则（`<!-- tail-ask:start -->`）。重复执行不会写两遍，`tail-ask remove` 只删自己那段。
+规则写进项目根的 `CLAUDE.md`。重复执行不会写两遍，`remove` 只删自己那段。
+
+### Codex / 其他读 AGENTS.md 的 agent
+
+```sh
+node tail-ask/bin/cli.js init codex     # Codex
+node tail-ask/bin/cli.js init agents    # 其他只认 AGENTS.md 的 agent
+```
+
+这两个目标写的是**同一个** `AGENTS.md`，装一个等于两个都装 —— `check` 会把它们都显示为已安装，这是正常的，不是装了两份。
 
 ### Cursor
 
@@ -57,9 +91,14 @@ node tail-ask/bin/cli.js init cursor
 
 ```js
 import { readFileSync } from 'node:fs'
-const rules = readFileSync('./tail-ask/rules/tail-ask.md', 'utf8')
+
+// 路径按你实际放的位置改，别用相对路径靠当前工作目录碰运气
+const RULES = '/path/to/tail-ask/rules/tail-ask.md'
+const rules = readFileSync(RULES, 'utf8')
 const system = `${baseSystemPrompt}\n\n${rules}`
 ```
+
+**成本**：规则全文约 1700 token，作为 system prompt 的一部分**每轮对话都要发一次**。常驻场景下这笔开销是持续的，觉得贵就删掉 `rules/tail-ask.md` 里你用不上的小节（比如纯 API 用不上「载体降级」那几段）。
 
 ---
 
@@ -67,11 +106,14 @@ const system = `${baseSystemPrompt}\n\n${rules}`
 
 | 平台 | 安装方式 | 拿到的能力 |
 |---|---|---|
-| DSH | `dsh plugin add link:<路径>` | 规则注入 systemPrompt；提问可用结构化选项卡片 |
+| DSH | `dsh plugin --profile desktop add link:<路径>`，没有 dsh 命令就手工改 `package.json` | 规则注入 systemPrompt；提问可用结构化选项卡片 |
 | Claude Code | `node bin/cli.js init claude` | 规则进 `CLAUDE.md`；提问可用 `AskUserQuestion` |
 | Codex | `node bin/cli.js init codex` | 规则进 `AGENTS.md`；提问是编号列表 |
 | Cursor | `node bin/cli.js init cursor` | 规则进 `.cursor/rules/*.mdc`；提问是编号列表 |
+| 其他 agent | `node bin/cli.js init agents` | 规则进 `AGENTS.md`；提问是编号列表 |
 | 纯 API | 手动拼进 system prompt | 只有规则；提问是正文里的编号列表 |
+
+> `codex` 和 `agents` 写的是同一个 `AGENTS.md`，装一个等于两个都装。
 
 > 本项目当前**只发布在 GitHub**，没有上架 npm，所以没有 `npx tail-ask` 这种一行安装。克隆下来直接用。
 

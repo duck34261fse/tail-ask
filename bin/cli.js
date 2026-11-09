@@ -179,10 +179,18 @@ function main() {
     if (cmd === 'check') {
       const rows = checkTargets(args.dir)
       const hit = rows.filter((r) => r.installed)
+      // 按文件去重：agents 和 codex 指向同一个 AGENTS.md，两个目标一个文件
+      const files = [...new Set(hit.map((r) => r.file))]
       for (const r of rows) {
         console.log(`${r.installed ? '[✓]' : '[ ]'} ${r.target.padEnd(7)} ${r.file}`)
       }
-      console.log(hit.length ? `\n共 ${hit.length} 个目标已安装。` : '\n没有目标安装。运行 tail-ask init 试试。')
+      if (!hit.length) {
+        console.log('\n没有目标安装。运行 tail-ask init 试试。')
+      } else if (files.length < hit.length) {
+        console.log(`\n共 ${files.length} 个文件已安装（${hit.length} 个目标共用这些文件；agents 与 codex 写的是同一个 AGENTS.md，属正常）。`)
+      } else {
+        console.log(`\n共 ${files.length} 个文件已安装（${hit.length} 个目标）。`)
+      }
       return
     }
     console.error(`未知命令 "${cmd}"`)
