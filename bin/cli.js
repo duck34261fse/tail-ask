@@ -48,7 +48,7 @@ function readRules() {
 }
 
 function block(rules) {
-  return `${MARK_START} v${VERSION} — 由 npx tail-ask init 生成，请勿手改这一段 -->
+  return `${MARK_START} v${VERSION} — 由 tail-ask CLI 生成，请勿手改这一段（要改请改 rules/tail-ask.md 后重跑 init） -->
 ${rules}
 ${MARK_END}`
 }
