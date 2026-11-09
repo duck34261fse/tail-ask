@@ -1,0 +1,5 @@
+# tail-ask 的 bundle patch：插件自己插进 DSH profile 层栈。
+# 用户不需要在 profile 的 cordis.patch.yml 里手工 insert。
+- insert:
+    - id: tail-ask
+      name: tail-ask

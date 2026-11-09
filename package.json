@@ -1,0 +1,46 @@
+{
+  "name": "tail-ask",
+  "version": "1.0.0",
+  "description": "Make any AI agent ask at the right moment — and never ask when it shouldn't. One platform-neutral rule file, thin adapters for DSH, Claude Code, Cursor, Codex and raw API calls.",
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./rules": "./rules/tail-ask.md",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "tail-ask": "./bin/cli.js"
+  },
+  "files": [
+    "lib",
+    "bin",
+    "rules",
+    "cordis.patch.yml",
+    "README.md",
+    "BASELINE.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "ai",
+    "agent",
+    "prompt",
+    "prompt-engineering",
+    "claude-code",
+    "cursor",
+    "codex",
+    "dsh",
+    "deepseek-harness",
+    "clarify",
+    "ask"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
