@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: 语法检查（所有 js）
+        run: |
+          set -e
+          found=0
+          for f in $(find lib bin -name '*.js'); do
+            echo "check $f"
+            node --check "$f"
+            found=$((found + 1))
+          done
+          if [ "$found" -eq 0 ]; then
+            echo "没有找到任何 js 文件，检查目录结构"
+            exit 1
+          fi
+
+      - name: 文件清单检查（files 字段必须覆盖发布必需项）
+        run: |
+          set -e
+          npm pack --dry-run --json > pack.json
+          node -e '
+            const p = require("./pack.json")[0];
+            const files = p.files.map(f => f.path);
+            const must = [
+              "package.json",
+              "lib/index.js",
+              "bin/cli.js",
+              "rules/tail-ask.md",
+              "cordis.patch.yml",
+              "README.md",
+              "LICENSE"
+            ];
+            const missing = must.filter(m => !files.includes(m));
+            if (missing.length) {
+              console.error("发布包缺少必需文件:", missing.join(", "));
+              process.exit(1);
+            }
+            console.log("文件清单 OK，共 " + files.length + " 项");
+          '
+
+      - name: 规则内核非空
+        run: |
+          set -e
+          test -s rules/tail-ask.md
+          echo "规则内核存在，$(wc -c < rules/tail-ask.md) 字节"
+
+      - name: CLI 行为探针（install / check / remove 幂等）
+        run: |
+          set -e
+          node bin/cli.js check
+          node bin/cli.js init claude
+          test -f CLAUDE.md
+          node bin/cli.js check | grep -q "claude"
+          node bin/cli.js init claude   # 重复 init 必须幂等
+          node bin/cli.js remove claude
+          test ! -f CLAUDE.md
+          echo "CLI 探针通过"
